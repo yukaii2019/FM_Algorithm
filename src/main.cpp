@@ -130,7 +130,6 @@ int main (int argc, char* argv[]){
     
     int cell_number_A = 0;
     vector<int> move_order;
-    int best_move = 0;
     
     int cell_max_idx = -1;
     
@@ -161,20 +160,22 @@ int main (int argc, char* argv[]){
     
     
     
+    
+    int r = 1;
+    int G = 0;
+    int best_G = 0;
+    int best_move = 0;
+    int best_num_A = cell_number_A;
+    int initial_cut_size = calculate_cut_size(&net_array,&position);
+    int best_A_size = A_size;
+    int best_B_size = B_size;
+    
     cout << "initial" << endl;     
-    cout << "cut size " <<calculate_cut_size(&net_array,&position) << endl;
+    cout << "cut size " << initial_cut_size << endl;
     cout << "A: " << cell_number_A << endl;
     cout << "B: " << cells.size() - cell_number_A << endl;
     cout << endl;
 
-    int r = 0;
-    int G = 0;
-    int best_G = 0;
-    int best_num_A = cell_number_A;
-    int initial_cut_size = calculate_cut_size(&net_array,&position);
-   
-   // int best_A_size = A_size;
-    //int best_B_size = B_size;
 
     while(1){
         int founded_cell;
@@ -190,8 +191,8 @@ int main (int argc, char* argv[]){
                 best_num_A = cell_number_A;
                 best_move = r;
 
-              //  best_A_size = A_size;
-              //  best_B_size = B_size;
+                best_A_size = A_size;
+                best_B_size = B_size;
             }
           //  cout << "round " << r+1 << endl;
           //  cout << "moved_cell " << founded_cell << endl;
@@ -216,12 +217,91 @@ int main (int argc, char* argv[]){
 
     cout << "Best cut_size " << initial_cut_size - best_G << endl;
     cout << "Best round " << best_move << endl;
-    
-    for(int i = 0 ; i< cell_max_idx +1 ;i++){
-        cell_locked[i] = false;
+    cout << "A: " << best_num_A << endl;
+    cout << "B: " << cells.size() - best_num_A << endl;
+    cout << endl<<endl;
+
+    /*********************** do all process second time ************************/
+    for(int t = 0 ;t<9;t++){
+        for(int i = 0 ; i< cell_max_idx +1 ;i++){
+            cell_locked[i] = false;
+        }
+        
+        for(int i = 0 ; i < best_move ;i++){
+            int c = move_order[i];
+            initial_position[c] = (initial_position[c] == 0)? 1: 0;
+        }
+        
+        move_order.clear();
+
+        for(int i = 0; i < cell_max_idx+1;i++){
+            position[i] = initial_position[i];
+        }
+        cell_number_A = best_num_A;
+
+        initialize_net_distribution(&net_array, &distribution, &position);
+        initialize_cell_gain(&cell_array,&distribution, &cell_gain, &position, cell_max_idx);
+        initialize_bucket_list(&cells, &cell_gain, &cell_size, &pos_in_bucket, &position, Pmax, &ListA, &ListB, &max_gain_A, &max_gain_B, cell_max_idx);
+
+        r = 1;
+        G = 0;
+        best_G = 0;
+        //best_num_A = cell_number_A;
+        best_move = 0;
+        initial_cut_size = calculate_cut_size(&net_array,&position);
+        A_size = best_A_size;
+        B_size = best_B_size;
+        
+        cout << "initial" << t+2 << endl;     
+        cout << "cut size " << initial_cut_size << endl;
+        cout << "A: " << cell_number_A << endl;
+        cout << "B: " << cells.size() - cell_number_A << endl;
+        cout << endl;
+
+        while(1){
+            int founded_cell;
+            int gain;
+            if(find_cell_to_move(&founded_cell, & gain, &cell_size, &A_size, &B_size, &Pmax, &ListA, &ListB, max_gain_A, max_gain_B)){
+                cell_locked[founded_cell] = true;
+                move_order.push_back(founded_cell);
+                G += gain;
+                update_gain(founded_cell, &cell_array, &net_array,&cell_gain, & cell_locked, &pos_in_bucket,&position, &Pmax,&ListA, &ListB, &max_gain_A, &max_gain_B,&cell_number_A);
+
+                if(G > best_G){
+                    best_G = G;
+                    best_num_A = cell_number_A;
+                    best_move = r;
+
+                    best_A_size = A_size;
+                    best_B_size = B_size;
+                }
+                //cout << "round " << r+1 << endl;
+                //cout << "moved_cell " << founded_cell << endl;
+                //cout << "cut size " <<calculate_cut_size(&net_array,&position) << endl;
+                //cout << "A: " << cell_number_A << endl;
+                //cout << "B: " << cells.size() - cell_number_A << endl;
+                //cout << "gain: " << gain << endl;
+                //cout << endl << endl;
+
+            }
+            else{
+               // cout << "No cell to move" << endl;
+                break;
+            }
+
+            if(G <= 0){
+                break;
+            }
+            r += 1;
+        }
+        cout << "Best cut_size " << initial_cut_size - best_G << endl;
+        cout << "Best round " << best_move << endl;
+        cout << "A: " << best_num_A << endl;
+        cout << "B: " << cells.size() - best_num_A << endl;
+        cout << endl << endl;
     }
-    
-    initialize_net_distribution(&net_array, &distribution, &position);
+
+   
     
     output_the_result(argv, initial_cut_size-best_G, best_num_A,cells.size()-best_num_A, &cells, & initial_position,&move_order,best_move);
     
@@ -667,7 +747,7 @@ void read_nets(char** argv, vector<int>** cell_array,vector<vector<int>>* net_ar
     f.close();
 }
 void output_the_result(char** argv, int cut_size, int num_A, int num_B, vector<CELL>* cells, bool** initial_position, vector<int>* move_order,int best_move){
-    for(int i = 0 ; i <= best_move ;i++){
+    for(int i = 0 ; i < best_move ;i++){
         int c = (*move_order)[i];
         (*initial_position)[c] = ((*initial_position)[c] == 0)? 1: 0;
     }
