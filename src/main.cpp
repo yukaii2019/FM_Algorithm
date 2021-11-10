@@ -84,6 +84,7 @@ class list{
         node<T>* last;
         int size;
 };
+
 void read_cells(char** argv, vector<CELL>* cells, int* B_size,int* cell_max_idx);
 void read_nets(char** argv, vector<int>** cell_array,vector<vector<int>>* net_array, int* Pmax, int cell_max_idx);
 void initialization(vector<CELL>* cells,int* A_size, int* B_size, bool** position, bool** initial_position,int* cell_number_A, int cell_max_idx);
@@ -98,11 +99,6 @@ void show_bucket(int* Pmax, list<int>** ListA, list<int>** ListB,int max_gain_A,
 void show_position(vector<CELL>* cells, bool** position, int cell_max_idx);
 int calculate_cut_size(vector<vector<int>>* net_array, bool** position);
 void output_the_result(char** argv, int cut_size, int num_A, int num_B, vector<CELL>* cells, bool** initial_position, vector<int>* move_order,int best_move);
-//void update_bucket(int founded_cell);
-
-
-
-
 
 
 
@@ -153,6 +149,7 @@ int main (int argc, char* argv[]){
 
     initialize_cell_gain(&cell_array,&distribution, &cell_gain, &position,cell_max_idx);
 
+    initialize_bucket_list(&cells, &cell_gain,& cell_size, &pos_in_bucket, &position, Pmax, &ListA, &ListB, &max_gain_A, &max_gain_B, cell_max_idx);
     
     
     cell_locked = new bool[cell_max_idx+1];
@@ -162,16 +159,12 @@ int main (int argc, char* argv[]){
 
     
     
-    initialize_bucket_list(&cells, &cell_gain,& cell_size, &pos_in_bucket, &position, Pmax, &ListA, &ListB, &max_gain_A, &max_gain_B, cell_max_idx);
     
     
-    cout << "initial position " << endl;     
-    //show_position();
-    //show_bucket();
+    cout << "initial" << endl;     
     cout << "cut size " <<calculate_cut_size(&net_array,&position) << endl;
     cout << "A: " << cell_number_A << endl;
     cout << "B: " << cells.size() - cell_number_A << endl;
-
     cout << endl;
 
     int r = 0;
@@ -179,11 +172,14 @@ int main (int argc, char* argv[]){
     int best_G = 0;
     int best_num_A = cell_number_A;
     int initial_cut_size = calculate_cut_size(&net_array,&position);
+   
+   // int best_A_size = A_size;
+    //int best_B_size = B_size;
+
     while(1){
         int founded_cell;
         int gain;
         if(find_cell_to_move(&founded_cell, & gain, &cell_size, &A_size, &B_size, &Pmax,&ListA, &ListB, max_gain_A, max_gain_B)){
-            cout << "founded_cell " << founded_cell << endl;
             cell_locked[founded_cell] = true;
             move_order.push_back(founded_cell);
             G += gain;
@@ -193,32 +189,39 @@ int main (int argc, char* argv[]){
                 best_G = G;
                 best_num_A = cell_number_A;
                 best_move = r;
+
+              //  best_A_size = A_size;
+              //  best_B_size = B_size;
             }
+          //  cout << "round " << r+1 << endl;
+          //  cout << "moved_cell " << founded_cell << endl;
+          //  cout << "cut size " <<calculate_cut_size(&net_array,&position) << endl;
+          //  cout << "A: " << cell_number_A << endl;
+          //  cout << "B: " << cells.size() - cell_number_A << endl;
+          //  cout << "gain: " << gain << endl;
+          //  cout << endl << endl;
+
         }
         else{
-            cout << "No cell to move" << endl;
+           // cout << "No cell to move" << endl;
             break;
         }
 
         if(G <= 0){
             break;
         }
-        
-        
-        cout << "round " << r << endl;
-        //show_position();
-        //show_bucket();
-        cout << "gain: " << gain << endl;
-        cout << "cut size " <<calculate_cut_size(&net_array,&position) << endl;
-        cout << "A: " << cell_number_A << endl;
-        cout << "B: " << cells.size() - cell_number_A << endl;
-        cout << "Best G " << best_G << endl;   
-        cout << endl;
         r += 1;
     }
+
+
     cout << "Best cut_size " << initial_cut_size - best_G << endl;
     cout << "Best round " << best_move << endl;
-
+    
+    for(int i = 0 ; i< cell_max_idx +1 ;i++){
+        cell_locked[i] = false;
+    }
+    
+    initialize_net_distribution(&net_array, &distribution, &position);
     
     output_the_result(argv, initial_cut_size-best_G, best_num_A,cells.size()-best_num_A, &cells, & initial_position,&move_order,best_move);
     
@@ -334,38 +337,31 @@ void update_gain(int moved_cell, vector<int>** cell_array,vector<vector<int>>* n
             for(int j = 0 ; j<(*net_array)[net].size();j++){
                 int c = (*net_array)[net][j];
                 if((*cell_locked)[c] == false){
-                    //delta_gain[c] += 1;
                     if(F == 0){
                         (*ListA)[(*cell_gain)[c]+*Pmax].remove(&(*pos_in_bucket)[c]);    
                         (*ListA)[(*cell_gain)[c]+1+*Pmax].push(c,&(*pos_in_bucket)[c]);
-                        //max_gain_A = (cell_gain[c]+1 > max_gain_A)? cell_gain[c]+1:max_gain_A;
                         *max_gain_A = ((*ListA)[*max_gain_A+1+*Pmax].size != 0)?*max_gain_A+1:*max_gain_A;
                     }
                     else{
                         (*ListB)[(*cell_gain)[c]+*Pmax].remove(&(*pos_in_bucket)[c]);    
                         (*ListB)[(*cell_gain)[c]+1+*Pmax].push(c,&(*pos_in_bucket)[c]);
-                        //max_gain_B(cell_gain[c]+1 > max_gain_B)? cell_gain[c]+1:max_gain_B;
                         *max_gain_B = ((*ListB)[*max_gain_B+1+*Pmax].size != 0)?*max_gain_B+1:*max_gain_B;
                     }
 
                     (*cell_gain)[c] += 1;
 
-                    cout << " 1 "<<" cell "<< c << " update from " << (*cell_gain)[c]-1 << " to " << (*cell_gain)[c] << endl;
+                    //cout << " 1 "<<" cell "<< c << " update from " << (*cell_gain)[c]-1 << " to " << (*cell_gain)[c] << endl;
                 }
             }
         }
         else if(Tn ==1){
             if((*cell_locked)[possi_update_T] == false){
-                //delta_gain[possi_update_T] -= 1;
                 if(F == 0){
-                    cout << (*cell_gain)[possi_update_T] << endl;
                     (*ListB)[(*cell_gain)[possi_update_T]+*Pmax].remove(&(*pos_in_bucket)[possi_update_T]);    
                     (*ListB)[(*cell_gain)[possi_update_T]-1+*Pmax].push(possi_update_T,&(*pos_in_bucket)[possi_update_T]);
-                    //max_gain_B = ()?:;
                     *max_gain_B = ((*ListB)[*max_gain_B+*Pmax].size != 0)?*max_gain_B:*max_gain_B - 1;
                 }
                 else{
-                    //cout <<ListA[cell_gain[possi_update_T]+Pmax].first->cell<<endl;
                     (*ListA)[(*cell_gain)[possi_update_T]+*Pmax].remove(&(*pos_in_bucket)[possi_update_T]);    
                     (*ListA)[(*cell_gain)[possi_update_T]-1+*Pmax].push(possi_update_T,&(*pos_in_bucket)[possi_update_T]);
 
@@ -374,7 +370,7 @@ void update_gain(int moved_cell, vector<int>** cell_array,vector<vector<int>>* n
                 
                 (*cell_gain)[possi_update_T] -= 1;
                 
-                cout << " 2 "<< " cell "<< possi_update_T << " update from " << (*cell_gain)[possi_update_T]+1 << " to " << (*cell_gain)[possi_update_T] << endl;
+                //cout << " 2 "<< " cell "<< possi_update_T << " update from " << (*cell_gain)[possi_update_T]+1 << " to " << (*cell_gain)[possi_update_T] << endl;
             }
         }
         Fn -= 1;
@@ -383,9 +379,6 @@ void update_gain(int moved_cell, vector<int>** cell_array,vector<vector<int>>* n
             for(int j=0; j<(*net_array)[net].size();j++){
                 int c = (*net_array)[net][j];
                 if((*cell_locked)[c] == false){
-                   // cout <<" aaaa"<< pos_in_bucket[c]->cell << endl;
-                    //delta_gain[c]-=1;
-                    
                     if(F == 0){
                         (*ListB)[(*cell_gain)[c]+*Pmax].remove(&(*pos_in_bucket)[c]);    
                         (*ListB)[(*cell_gain)[c]-1+*Pmax].push(c,&(*pos_in_bucket)[c]);
@@ -399,10 +392,8 @@ void update_gain(int moved_cell, vector<int>** cell_array,vector<vector<int>>* n
                         *max_gain_A = ((*ListA)[*max_gain_A+*Pmax].size != 0)?*max_gain_A:*max_gain_A - 1;
                     }
 
-                  //  cout <<" aaaa"<< pos_in_bucket[c]->cell << endl;
-                    (*cell_gain)[c]-=1;
-                    
-                    cout << " 3 "<<" cell "<< c << " update from " << (*cell_gain)[c]+1 << " to " << (*cell_gain)[c] << endl;
+                    (*cell_gain)[c]-=1; 
+                   // cout << " 3 "<<" cell "<< c << " update from " << (*cell_gain)[c]+1 << " to " << (*cell_gain)[c] << endl;
                 }
             }
         }
@@ -425,19 +416,19 @@ void update_gain(int moved_cell, vector<int>** cell_array,vector<vector<int>>* n
                 
 
                 (*cell_gain)[possi_update_F] += 1;
-                cout << " 4 "<<" cell "<< possi_update_F << " update from " << (*cell_gain)[possi_update_F]-1 << " to " << (*cell_gain)[possi_update_F] << endl;
+               // cout << " 4 "<<" cell "<< possi_update_F << " update from " << (*cell_gain)[possi_update_F]-1 << " to " << (*cell_gain)[possi_update_F] << endl;
             }
         }
     }
         
-   
-    
     (*position)[moved_cell] = T;
 }
 
 bool find_cell_to_move(int* cell, int* gain, int** cell_size,int* A_size, int* B_size, int* Pmax, list<int>** ListA, list<int>** ListB, int max_gain_A, int max_gain_B){
     int i = max_gain_A;
     int j = max_gain_B;
+    //int i = *Pmax;
+    //int j = *Pmax;
     
     bool found = false;
     while(i>=-*Pmax || j>= -*Pmax){
@@ -556,8 +547,6 @@ void initialization(vector<CELL>* cells, int* A_size, int* B_size, bool** positi
         i = i+1;
         *cell_number_A += 1;
     }
-    //cout << "A_size" << " " << A_size << endl;
-    //cout << "B_size" << " " << B_size << endl;
 
 }
 
@@ -585,7 +574,6 @@ void initialize_cell_gain(vector<int>** cell_array, NET_DIST** distribution,int*
         
         for(int j = 0;j<(*cell_array)[i].size();j++){
             int net = (*cell_array)[i][j];
-                //cout << "aaaaa" << "net" << endl;
             int F=0;
             int T=0;
             if((*position)[i] == 0){
@@ -597,7 +585,6 @@ void initialize_cell_gain(vector<int>** cell_array, NET_DIST** distribution,int*
                 T = (*distribution)[net].A;
             }
             if (F == 1){
-                //cout << cell_gain[i] << endl;
                 (*cell_gain)[i] =(*cell_gain)[i] +1;
             }
             if (T == 0){
