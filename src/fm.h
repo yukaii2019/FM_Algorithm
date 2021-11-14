@@ -60,6 +60,7 @@ class floorplane{
     void initialize_cell_gain(void);
     void initialize_bucket_list(void);
     void initialize_cell_locked(void);
+    void initialize_Pmax(void);
 
     bool find_cell_to_move(int* cell,int* gain);
     void update_gain(int moved_cell);

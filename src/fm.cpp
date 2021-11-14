@@ -382,6 +382,14 @@ void floorplane:: Initialize_for_secod_FM(void){
     A_size = best_A_size;
     B_size = best_B_size;
 }
+void floorplane::initialize_Pmax(void){
+    for(int i = 0 ; i<cell_max_idx + 1;i++){
+       int p = cell_array[i].size();
+       if(p>Pmax){
+           Pmax = p;
+       }
+    }
+}
 
 //void read_cells(char** argv, vector<CELL>* cells,int* B_size, int* cell_max_idx){
 void floorplane::read_cells(string filename){
@@ -426,7 +434,7 @@ void floorplane::read_nets(string filename){
     
     vector<int> net_arr;
     
-    int p = 0;
+    //int p = 0;
 
     while(!f.eof()){
         f >> in;
@@ -434,22 +442,22 @@ void floorplane::read_nets(string filename){
             net_array.push_back(net_arr);
             net_arr.clear();
             now_net = stoi(in.erase(0,1));
-            if(p>Pmax){
-                Pmax = p;
-            }
-            p = 0;
+            //if(p>Pmax){
+            //    Pmax = p;
+            //}
+            //p = 0;
         }
         else if (in[0] == 'c'){
-            p = p+1;
+            //p = p+1;
             int cell_int = stoi(in.erase(0,1));
             cell_array[cell_int].push_back(now_net);
             net_arr.push_back(cell_int);
         }
     }   
     net_array.push_back(net_arr);
-    if(p>Pmax){
-        Pmax = p;
-    }
+    //if(p>Pmax){
+    //    Pmax = p;
+    //}
     f.close();
 }
 

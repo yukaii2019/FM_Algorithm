@@ -32,6 +32,7 @@ int main (int argc, char* argv[]){
     /*===============execution===============*/
     exe_start = clock();
 
+    fp.initialize_Pmax();
     fp.initialize_cell_locked();  
     fp.initialization();
     fp.initialize_net_distribution();
