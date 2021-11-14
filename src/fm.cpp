@@ -237,11 +237,11 @@ int floorplane::FM_main(void){
             break;
         }
         now_time = clock();
-        if((float)(now_time - start_time)/CLOCKS_PER_SEC  > 30){
+        if((float)(now_time - start_time)/CLOCKS_PER_SEC  > 25){
             break;
         }
 
-        if(G <= 0){
+        if(G <= -10){
             break;
         }
         r += 1;
@@ -386,8 +386,9 @@ void floorplane:: Initialize_for_secod_FM(void){
 //void read_cells(char** argv, vector<CELL>* cells,int* B_size, int* cell_max_idx){
 void floorplane::read_cells(string filename){
     ifstream f;
-    string path = "../testcases/"; 
-    f.open(path + filename,ios::in);
+    //string path = "../testcases/"; 
+    //f.open(path + filename,ios::in);
+    f.open(filename,ios::in);
     if(!f){
         printf("can't not read the cell file");
     }
@@ -414,8 +415,9 @@ void floorplane::read_cells(string filename){
 void floorplane::read_nets(string filename){
     cell_array = new vector<int> [cell_max_idx+1];
     ifstream f;
-    string path = "../testcases/"; 
-    f.open(path + filename,ios::in);
+    //string path = "../testcases/"; 
+    //f.open(path + filename,ios::in);
+    f.open(filename,ios::in);
     if(!f){
         printf("can't not read the net file");
     }
@@ -459,13 +461,14 @@ void floorplane::output_the_result(string filename){
         initial_position[c] = (initial_position[c] == 0)? 1: 0;
     }
     ofstream f;
-    string path = "../output/";
-    string fullname = filename; 
-    size_t lastindex = fullname.find_last_of("."); 
-    string rawname = fullname.substr(0, lastindex); 
+    //string path = "../output/";
+    //string fullname = filename; 
+    //size_t lastindex = fullname.find_last_of("."); 
+    //string rawname = fullname.substr(0, lastindex); 
 
 
-    f.open(path + rawname + ".out",ios::out);
+    //f.open(path + rawname + ".out",ios::out);
+    f.open(filename,ios::out);
     if(!f){
         printf("can't not open the out file");
     }

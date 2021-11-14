@@ -61,7 +61,7 @@ int main (int argc, char* argv[]){
     /*===============output==================*/
     out_start = clock();
 
-    fp.output_the_result(string(argv[1]));
+    fp.output_the_result(string(argv[3]));
     
     out_finish = clock();
     /*=======================================*/
